@@ -67,7 +67,7 @@ new_html = """<!DOCTYPE html>
 </html>
 """
 
-newrow_html = "<tr><td>{}</td><td><a href='/edit/{}'><button>Edit</button></a><a href='/run/{}'><button>Run</button></a></tr>"
+newrow_html = "<tr><td>{}</td><td><a href='/edit/{}'><button>Edit</button></a><a href='/run/{}'><button>Run</button></a>"
 
 def setPayload(payload_number):
     if payload_number == 1:
@@ -84,13 +84,17 @@ def ducky_main(request):
     for f in files:
         if '.dd' in f:
             payloads.append(f)
-            newrow = newrow_html.format(f, f, f)
+            if f != "payload.dd":  # Exclude "payload.dd" from having a Remove button
+                newrow = newrow_html.format(
+                    f, f, f
+                ) + f"<a href='/remove/{f}'><button>Remove</button></a></td></tr>"
+            else:
+                newrow = newrow_html.format(f, f, f) + "</td></tr>"
             rows = rows + newrow
     response = payload_html.format(rows)
     return response
 
 def cleanup_text(buffer):
-    # Mapping table for specific encoded strings
     replacements = {
         '%3A': ':',
         '%2F': '/',
@@ -117,11 +121,8 @@ def cleanup_text(buffer):
         '%3B': ';',
         '%23': '#',
     }
-    
-    # Replace each encoded string with its corresponding character
     for encoded, actual in replacements.items():
         buffer = buffer.replace(encoded, actual)
-    
     return buffer + '\n'
 
 web_app = WSGIApp()
@@ -131,15 +132,28 @@ def duck_main(request):
     response = ducky_main(request)
     return ("200 OK", [('Content-Type', 'text/html')], response)
 
+@web_app.route("/remove/<filename>")
+def remove_file(request, filename):
+    if filename == "payload.dd":
+        return ("403 Forbidden", [('Content-Type', 'text/html')], "<html><body>Cannot remove payload.dd</body></html>")
+    try:
+        storage.remount("/", readonly=False)
+        os.remove(filename)
+        storage.remount("/", readonly=True)
+    except Exception as e:
+        return ("500 Internal Server Error", [('Content-Type', 'text/html')], f"<html><body>Error: {e}</body></html>")
+    return ("302 Found", [
+        ("Location", "/ducky"),
+        ("Content-Type", "text/html")
+    ], "<html><body>Redirecting...</body></html>")
+
 @web_app.route("/edit/<filename>")
 def edit(request, filename):
-    print("Editing", filename)
     try:
         with open(filename, "r", encoding='utf-8') as f:
             textbuffer = f.read()
     except FileNotFoundError:
         return ("404 Not Found", [('Content-Type', 'text/html')], "<html><body>File not found</body></html>")
-
     response = edit_html.format(filename, textbuffer)
     return ("200 OK", [('Content-Type', 'text/html')], response)
 
@@ -147,17 +161,13 @@ def edit(request, filename):
 def write_script(request, filename):
     data = request.body.getvalue()
     fields = data.split("&")
-    form_data = {}
-    for field in fields:
-        key, value = field.split('=')
-        form_data[key] = value
+    form_data = {field.split('=')[0]: field.split('=')[1] for field in fields}
 
     storage.remount("/", readonly=False)
     with open(filename, "w", encoding='utf-8') as f:
         textbuffer = cleanup_text(form_data['scriptData'])
         f.write(textbuffer)
     storage.remount("/", readonly=True)
-    # Redirect directly to home page
     return ("302 Found", [
         ("Location", "/ducky"),
         ("Content-Type", "text/html")
@@ -165,33 +175,25 @@ def write_script(request, filename):
 
 @web_app.route("/new", methods=['GET', 'POST'])
 def write_new_script(request):
-    response = ''
     if request.method == 'GET':
-        response = new_html
+        return ("200 OK", [('Content-Type', 'text/html')], new_html)
     else:
         data = request.body.getvalue()
         fields = data.split("&")
-        form_data = {}
-        for field in fields:
-            key, value = field.split('=')
-            form_data[key] = value
-
+        form_data = {field.split('=')[0]: field.split('=')[1] for field in fields}
         filename = form_data['scriptName']
         textbuffer = cleanup_text(form_data['scriptData'])
         storage.remount("/", readonly=False)
         with open(filename, "w", encoding='utf-8') as f:
             f.write(textbuffer)
         storage.remount("/", readonly=True)
-        # Redirect directly to home page
         return ("302 Found", [
             ("Location", "/ducky"),
             ("Content-Type", "text/html")
         ], "<html><body>Redirecting...</body></html>")
-    return ("200 OK", [('Content-Type', 'text/html')], response)
 
 @web_app.route("/run/<filename>")
 def run_script(request, filename):
-    print("run_script", filename)
     try:
         runScript(filename)
     except Exception as e:
@@ -209,7 +211,6 @@ def index(request):
 @web_app.route("/api/run/<filenumber>")
 def api_run_script(request, filenumber):
     filename = setPayload(int(filenumber))
-    print("run_script", filenumber)
     try:
         runScript(filename)
     except Exception as e:
@@ -228,4 +229,3 @@ async def startWebService():
     while True:
         wsgiServer.update_poll()
         await asyncio.sleep(0)
-
