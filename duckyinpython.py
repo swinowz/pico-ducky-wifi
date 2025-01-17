@@ -27,13 +27,13 @@ from adafruit_hid.consumer_control import ConsumerControl
 from adafruit_hid.consumer_control_code import ConsumerControlCode
 
 # comment out these lines for non_US keyboards
-from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS as KeyboardLayout
-from adafruit_hid.keycode import Keycode
+#from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS as KeyboardLayout
+#from adafruit_hid.keycode import Keycode
 
 # uncomment these lines for non_US keyboards
 # replace LANG with appropriate language
-#from keyboard_layout_win_LANG import KeyboardLayout as KeyboardLayout
-#from keycode_win_LANG import Keycode
+from keyboard_layout_win_fr import KeyboardLayout as KeyboardLayout
+from keycode_win_fr import Keycode
 
 duckyKeys = {
     'WINDOWS': Keycode.GUI, 'RWINDOWS': Keycode.RIGHT_GUI, 'GUI': Keycode.GUI, 'RGUI': Keycode.RIGHT_GUI, 'COMMAND': Keycode.GUI, 'RCOMMAND': Keycode.RIGHT_GUI,

