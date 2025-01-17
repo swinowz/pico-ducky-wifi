@@ -95,9 +95,27 @@ def cleanup_text(buffer):
         '%3A': ':',
         '%2F': '/',
         '%7C': '|',
-        '%0D%0A': '\n',  # Windows-style newlines
-        '%20': ' ',       # Space
-        '+': ' '          # Replace '+' with space
+        '%0D%0A': '\n',
+        '%0A': '\n',
+        '%0D': '\r',
+        '%20': ' ',
+        '%25': '%',
+        '%27': "'",
+        '%22': '"',
+        '%5C': '\\',
+        '%5B': '[',
+        '%5D': ']',
+        '%3C': '<',
+        '%3E': '>',
+        '%3F': '?',
+        '%26': '&',
+        '%40': '@',
+        '%24': '$',
+        '%3D': '=',
+        '+'  : ' ',
+        '%2C': ',',
+        '%3B': ';',
+        '%23': '#',
     }
     
     # Replace each encoded string with its corresponding character
